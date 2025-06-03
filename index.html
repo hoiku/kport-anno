@@ -19,6 +19,7 @@
         </select>
     </label>
     <button id="addBtn" disabled>Add Annotation</button>
+    <button id="editBtn" disabled>Edit Selected</button>
     <button id="deleteBtn" disabled>Delete Selected</button>
     <button id="downloadBtn">Download JSON</button>
 </div>
@@ -32,7 +33,7 @@
 </div>
 <div id="modal" class="hidden">
     <div id="modalContent">
-        <h2>New Annotation</h2>
+        <h2 id="modalTitle">New Annotation</h2>
         <form id="annotationForm">
             <label>Author
                 <input type="text" name="author" required>
