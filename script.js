@@ -11,6 +11,10 @@ const downloadBtn = document.getElementById('downloadBtn');
 const addBtn = document.getElementById('addBtn');
 const editBtn = document.getElementById('editBtn');
 const deleteBtn = document.getElementById('deleteBtn');
+const editShapeBtn = document.getElementById('editShapeBtn');
+const vertexMenu = document.getElementById('vertexMenu');
+const vertexDeleteBtn = document.getElementById('vertexDeleteBtn');
+const vertexMoveBtn = document.getElementById('vertexMoveBtn');
 const startPolygonBtn = document.getElementById('startPolygonBtn');
 const authorFilter = document.getElementById('authorFilter');
 const objectFilter = document.getElementById('objectFilter');
@@ -26,6 +30,13 @@ let editingIndex = null;
 let isDragging = false;
 let dragStart = null;
 let drawingMode = false;
+let shapeEditMode = false;
+let editingPolygon = null;
+let editingType = null;
+let editingIdx = null;
+let selectedVertex = null;
+let movingVertex = false;
+let isDraggingVertex = false;
 
 function saveAnnotations() {
   localStorage.setItem('annotations', JSON.stringify(annotations));
@@ -113,6 +124,48 @@ deleteBtn.addEventListener('click', () => {
   updateButtonStates();
 });
 
+editShapeBtn.addEventListener('click', () => {
+  if (!selected && !shapeEditMode) return;
+  if (!shapeEditMode) {
+    shapeEditMode = true;
+    editingType = selected.type;
+    editingIdx = selected.index;
+    editingPolygon = (selected.type === 'annotation')
+      ? displayedAnnotations[selected.index].points
+      : pendingPolygons[selected.index];
+  } else {
+    shapeEditMode = false;
+    vertexMenu.classList.add('hidden');
+    selectedVertex = null;
+    movingVertex = false;
+    isDraggingVertex = false;
+    if (editingType === 'annotation') {
+      saveAnnotations();
+    }
+    rebuildPaths();
+    draw();
+  }
+  updateButtonStates();
+});
+
+vertexDeleteBtn.addEventListener('click', () => {
+  if (editingPolygon && selectedVertex !== null) {
+    editingPolygon.splice(selectedVertex, 1);
+    selectedVertex = null;
+    vertexMenu.classList.add('hidden');
+    rebuildPaths();
+    draw();
+  }
+});
+
+vertexMoveBtn.addEventListener('click', () => {
+  if (editingPolygon && selectedVertex !== null) {
+    movingVertex = true;
+    isDraggingVertex = false;
+    vertexMenu.classList.add('hidden');
+  }
+});
+
 function updateFilterOptions() {
   const authors = [...new Set(annotations.map(a => a.author))];
   const objects = [...new Set(annotations.map(a => a.object))];
@@ -186,6 +239,7 @@ function draw() {
     ctx.stroke();
   });
   drawCurrent();
+  if (shapeEditMode && editingPolygon) drawHandles();
 }
 
 function drawCurrent() {
@@ -201,10 +255,30 @@ function drawCurrent() {
   ctx.stroke();
 }
 
+function drawHandles() {
+  editingPolygon.forEach((pt, i) => {
+    const x = pt[0] * canvas.width - 3;
+    const y = pt[1] * canvas.height - 3;
+    ctx.fillStyle = 'yellow';
+    ctx.strokeStyle = 'black';
+    ctx.lineWidth = 1;
+    ctx.fillRect(x, y, 6, 6);
+    ctx.strokeRect(x, y, 6, 6);
+  });
+}
+
 canvas.addEventListener('mousemove', e => {
   const rect = canvas.getBoundingClientRect();
   const x = e.clientX - rect.left;
   const y = e.clientY - rect.top;
+  if (shapeEditMode) {
+    if (movingVertex && isDraggingVertex && editingPolygon && selectedVertex !== null) {
+      editingPolygon[selectedVertex] = [x / canvas.width, y / canvas.height];
+      rebuildPaths();
+      draw();
+    }
+    return;
+  }
   if (isDragging && selected) {
     const dx = (x - dragStart.x) / canvas.width;
     const dy = (y - dragStart.y) / canvas.height;
@@ -235,9 +309,20 @@ canvas.addEventListener('mousemove', e => {
 canvas.addEventListener('mouseleave', () => {
   tooltip.classList.add('hidden');
   isDragging = false;
+  if (shapeEditMode) {
+    movingVertex = false;
+    isDraggingVertex = false;
+    vertexMenu.classList.add('hidden');
+  }
 });
 
 canvas.addEventListener('mousedown', e => {
+  if (shapeEditMode) {
+    if (movingVertex) {
+      isDraggingVertex = true;
+    }
+    return;
+  }
   if (!selected) return;
   const rect = canvas.getBoundingClientRect();
   const x = e.clientX - rect.left;
@@ -252,6 +337,14 @@ canvas.addEventListener('mousedown', e => {
 });
 
 canvas.addEventListener('mouseup', () => {
+  if (shapeEditMode) {
+    if (isDraggingVertex) {
+      isDraggingVertex = false;
+      movingVertex = false;
+      vertexMenu.classList.remove('hidden');
+    }
+    return;
+  }
   if (isDragging && selected && selected.type === 'annotation') {
     saveAnnotations();
   }
@@ -262,6 +355,30 @@ canvas.addEventListener('click', e => {
   const rect = canvas.getBoundingClientRect();
   const px = e.clientX - rect.left;
   const py = e.clientY - rect.top;
+
+  if (shapeEditMode) {
+    if (editingPolygon) {
+      const threshold = 6;
+      let found = -1;
+      editingPolygon.forEach((pt, i) => {
+        const vx = pt[0] * canvas.width;
+        const vy = pt[1] * canvas.height;
+        if (Math.abs(px - vx) <= threshold && Math.abs(py - vy) <= threshold) {
+          found = i;
+        }
+      });
+      if (found !== -1) {
+        selectedVertex = found;
+        vertexMenu.style.left = `${e.clientX + 5}px`;
+        vertexMenu.style.top = `${e.clientY + 5}px`;
+        vertexMenu.classList.remove('hidden');
+      } else {
+        vertexMenu.classList.add('hidden');
+        selectedVertex = null;
+      }
+    }
+    return;
+  }
 
   if (drawingMode) {
     const x = px / canvas.width;
@@ -293,6 +410,7 @@ canvas.addEventListener('click', e => {
 });
 
 canvas.addEventListener('dblclick', e => {
+  if (shapeEditMode) return;
   if (drawingMode && currentPolygon.length > 2) {
     pendingPolygons.push(currentPolygon);
     currentPolygon = [];
@@ -375,8 +493,10 @@ function showInfo(index) {
 }
 
 function updateButtonStates() {
-  addBtn.disabled = !(selected && selected.type === 'pending');
-  editBtn.disabled = !(selected && selected.type === 'annotation');
-  deleteBtn.disabled = !selected;
-  startPolygonBtn.disabled = drawingMode;
+  addBtn.disabled = !(selected && selected.type === 'pending') || shapeEditMode;
+  editBtn.disabled = !(selected && selected.type === 'annotation') || shapeEditMode;
+  deleteBtn.disabled = !selected || shapeEditMode;
+  startPolygonBtn.disabled = drawingMode || shapeEditMode;
+  editShapeBtn.disabled = !selected;
+  editShapeBtn.textContent = shapeEditMode ? 'Save Polygon' : 'Edit Polygon';
 }
