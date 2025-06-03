@@ -1,0 +1,4 @@
+body { font-family: Arial, sans-serif; }
+#container { position: relative; display: inline-block; }
+canvas { position: absolute; top: 0; left: 0; }
+#filters { margin-bottom: 10px; }
