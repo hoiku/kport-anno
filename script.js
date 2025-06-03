@@ -8,13 +8,19 @@ const cancelBtn = document.getElementById('cancelBtn');
 const tooltip = document.getElementById('tooltip');
 const downloadBtn = document.getElementById('downloadBtn');
 const addBtn = document.getElementById('addBtn');
+const deleteBtn = document.getElementById('deleteBtn');
 const authorFilter = document.getElementById('authorFilter');
 const objectFilter = document.getElementById('objectFilter');
 
 let annotations = [];
 let displayedAnnotations = [];
+let pendingPolygons = [];
 let paths = [];
+let pendingPaths = [];
 let currentPolygon = [];
+let selected = null;
+let isDragging = false;
+let dragStart = null;
 
 fetch('annotations.json')
   .then(r => r.json())
@@ -22,6 +28,7 @@ fetch('annotations.json')
     annotations = data;
     updateFilterOptions();
     applyFilters();
+    updateButtonStates();
   });
 
 function setCanvasSize() {
@@ -43,7 +50,23 @@ window.addEventListener('resize', () => {
 authorFilter.addEventListener('change', applyFilters);
 objectFilter.addEventListener('change', applyFilters);
 addBtn.addEventListener('click', () => {
-  modal.classList.remove('hidden');
+  if (selected && selected.type === 'pending') {
+    modal.classList.remove('hidden');
+  }
+});
+deleteBtn.addEventListener('click', () => {
+  if (!selected) return;
+  if (selected.type === 'pending') {
+    pendingPolygons.splice(selected.index, 1);
+  } else if (selected.type === 'annotation') {
+    const ann = displayedAnnotations[selected.index];
+    const idx = annotations.indexOf(ann);
+    if (idx !== -1) annotations.splice(idx, 1);
+  }
+  selected = null;
+  updateFilterOptions();
+  applyFilters();
+  updateButtonStates();
 });
 
 function updateFilterOptions() {
@@ -76,11 +99,21 @@ function rebuildPaths() {
     path.closePath();
     return path;
   });
+  pendingPaths = pendingPolygons.map(poly => {
+    const path = new Path2D();
+    poly.forEach((pt, i) => {
+      const x = pt[0] * canvas.width;
+      const y = pt[1] * canvas.height;
+      if (i === 0) path.moveTo(x, y); else path.lineTo(x, y);
+    });
+    path.closePath();
+    return path;
+  });
 }
 
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  displayedAnnotations.forEach(ann => {
+  displayedAnnotations.forEach((ann, i) => {
     ctx.beginPath();
     ann.points.forEach((pt, j) => {
       const x = pt[0] * canvas.width;
@@ -88,7 +121,23 @@ function draw() {
       if (j === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
     });
     ctx.closePath();
-    ctx.strokeStyle = 'red';
+    if (selected && selected.type === 'annotation' && selected.index === i) {
+      ctx.strokeStyle = 'green';
+    } else {
+      ctx.strokeStyle = 'red';
+    }
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  });
+  pendingPolygons.forEach((poly, i) => {
+    ctx.beginPath();
+    poly.forEach((pt, j) => {
+      const x = pt[0] * canvas.width;
+      const y = pt[1] * canvas.height;
+      if (j === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    });
+    ctx.closePath();
+    ctx.strokeStyle = (selected && selected.type === 'pending' && selected.index === i) ? 'green' : 'blue';
     ctx.lineWidth = 2;
     ctx.stroke();
   });
@@ -112,6 +161,21 @@ canvas.addEventListener('mousemove', e => {
   const rect = canvas.getBoundingClientRect();
   const x = e.clientX - rect.left;
   const y = e.clientY - rect.top;
+  if (isDragging && selected) {
+    const dx = (x - dragStart.x) / canvas.width;
+    const dy = (y - dragStart.y) / canvas.height;
+    dragStart = { x, y };
+    let poly;
+    if (selected.type === 'annotation') {
+      poly = displayedAnnotations[selected.index].points;
+    } else {
+      poly = pendingPolygons[selected.index];
+    }
+    poly.forEach(pt => { pt[0] += dx; pt[1] += dy; });
+    rebuildPaths();
+    draw();
+    return;
+  }
   const idx = paths.findIndex(p => ctx.isPointInPath(p, x, y));
   if (idx !== -1) {
     const ann = displayedAnnotations[idx];
@@ -126,60 +190,99 @@ canvas.addEventListener('mousemove', e => {
 
 canvas.addEventListener('mouseleave', () => {
   tooltip.classList.add('hidden');
+  isDragging = false;
+});
+
+canvas.addEventListener('mousedown', e => {
+  if (!selected) return;
+  const rect = canvas.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+  let path;
+  if (selected.type === 'annotation') path = paths[selected.index];
+  else path = pendingPaths[selected.index];
+  if (ctx.isPointInPath(path, x, y)) {
+    isDragging = true;
+    dragStart = { x, y };
+  }
+});
+
+canvas.addEventListener('mouseup', () => {
+  isDragging = false;
 });
 
 canvas.addEventListener('click', e => {
   const rect = canvas.getBoundingClientRect();
   const px = e.clientX - rect.left;
   const py = e.clientY - rect.top;
-  if (currentPolygon.length === 0) {
-    const idx = paths.findIndex(p => ctx.isPointInPath(p, px, py));
-    if (idx !== -1) {
-      showInfo(idx);
-      return;
-    }
+  if (currentPolygon.length > 0) {
+    const x = px / canvas.width;
+    const y = py / canvas.height;
+    currentPolygon.push([x, y]);
+    draw();
+    return;
   }
-  const x = px / canvas.width;
-  const y = py / canvas.height;
-  currentPolygon.push([x, y]);
+
+  let idx = pendingPaths.findIndex(p => ctx.isPointInPath(p, px, py));
+  if (idx !== -1) {
+    selected = { type: 'pending', index: idx };
+    updateButtonStates();
+    draw();
+    return;
+  }
+  idx = paths.findIndex(p => ctx.isPointInPath(p, px, py));
+  if (idx !== -1) {
+    selected = { type: 'annotation', index: idx };
+    showInfo(idx);
+    updateButtonStates();
+    draw();
+    return;
+  }
+
+  selected = null;
+  updateButtonStates();
+  currentPolygon = [[px / canvas.width, py / canvas.height]];
   draw();
 });
 
 canvas.addEventListener('dblclick', e => {
-  // Double-click now simply clears the current polygon without
-  // showing the annotation modal.
-  currentPolygon = [];
-  draw();
+  if (currentPolygon.length > 0) {
+    pendingPolygons.push(currentPolygon);
+    currentPolygon = [];
+    rebuildPaths();
+    selected = { type: 'pending', index: pendingPolygons.length - 1 };
+    updateButtonStates();
+    draw();
+  }
   e.preventDefault();
 });
 
 form.addEventListener('submit', e => {
   e.preventDefault();
+  if (!(selected && selected.type === 'pending')) return;
   const ann = {
     author: form.author.value,
     object: form.object.value,
     description: form.description.value,
     tags: form.tags.value.split(',').map(t => t.trim()).filter(t => t),
-    points: currentPolygon
+    points: pendingPolygons[selected.index]
   };
   annotations.push(ann);
-  currentPolygon = [];
+  pendingPolygons.splice(selected.index, 1);
+  selected = null;
   modal.classList.add('hidden');
   updateFilterOptions();
   applyFilters();
+  updateButtonStates();
 });
 
 cancelBtn.addEventListener('click', () => {
-  currentPolygon = [];
   modal.classList.add('hidden');
-  draw();
 });
 
 modal.addEventListener('click', e => {
   if (e.target === modal) {
-    currentPolygon = [];
     modal.classList.add('hidden');
-    draw();
   }
 });
 
@@ -200,4 +303,9 @@ function showInfo(index) {
     `<p><strong>Object:</strong> ${ann.object}</p>` +
     `<p><strong>Description:</strong> ${ann.description || ''}</p>` +
     `<p><strong>Tags:</strong> ${(ann.tags || []).join(', ')}</p>`;
+}
+
+function updateButtonStates() {
+  addBtn.disabled = !(selected && selected.type === 'pending');
+  deleteBtn.disabled = !selected;
 }
