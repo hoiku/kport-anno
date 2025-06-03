@@ -132,10 +132,10 @@ canvas.addEventListener('click', e => {
 });
 
 canvas.addEventListener('dblclick', e => {
-  if (currentPolygon.length > 2) {
-    form.reset();
-    modal.classList.remove('hidden');
-  }
+  // Double-click now simply clears the current polygon without
+  // showing the annotation modal.
+  currentPolygon = [];
+  draw();
   e.preventDefault();
 });
 
