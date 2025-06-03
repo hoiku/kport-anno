@@ -7,6 +7,7 @@ const form = document.getElementById('annotationForm');
 const cancelBtn = document.getElementById('cancelBtn');
 const tooltip = document.getElementById('tooltip');
 const downloadBtn = document.getElementById('downloadBtn');
+const addBtn = document.getElementById('addBtn');
 const authorFilter = document.getElementById('authorFilter');
 const objectFilter = document.getElementById('objectFilter');
 
@@ -31,6 +32,9 @@ image.onload = () => {
 
 authorFilter.addEventListener('change', applyFilters);
 objectFilter.addEventListener('change', applyFilters);
+addBtn.addEventListener('click', () => {
+  modal.classList.remove('hidden');
+});
 
 function updateFilterOptions() {
   const authors = [...new Set(annotations.map(a => a.author))];
@@ -159,6 +163,14 @@ cancelBtn.addEventListener('click', () => {
   currentPolygon = [];
   modal.classList.add('hidden');
   draw();
+});
+
+modal.addEventListener('click', e => {
+  if (e.target === modal) {
+    currentPolygon = [];
+    modal.classList.add('hidden');
+    draw();
+  }
 });
 
 downloadBtn.addEventListener('click', () => {
