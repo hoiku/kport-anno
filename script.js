@@ -7,28 +7,52 @@ const form = document.getElementById('annotationForm');
 const cancelBtn = document.getElementById('cancelBtn');
 const tooltip = document.getElementById('tooltip');
 const downloadBtn = document.getElementById('downloadBtn');
+const authorFilter = document.getElementById('authorFilter');
+const objectFilter = document.getElementById('objectFilter');
 
 let annotations = [];
+let displayedAnnotations = [];
 let paths = [];
 let currentPolygon = [];
 
 fetch('annotations.json')
-  .then(res => res.json())
+  .then(r => r.json())
   .then(data => {
     annotations = data;
-    rebuildPaths();
-    draw();
+    updateFilterOptions();
+    applyFilters();
   });
 
 image.onload = () => {
   canvas.width = image.width;
   canvas.height = image.height;
-  rebuildPaths();
-  draw();
+  applyFilters();
 };
 
+authorFilter.addEventListener('change', applyFilters);
+objectFilter.addEventListener('change', applyFilters);
+
+function updateFilterOptions() {
+  const authors = [...new Set(annotations.map(a => a.author))];
+  const objects = [...new Set(annotations.map(a => a.object))];
+  authorFilter.innerHTML = '<option value="">All</option>' +
+    authors.map(a => `<option value="${a}">${a}</option>`).join('');
+  objectFilter.innerHTML = '<option value="">All</option>' +
+    objects.map(o => `<option value="${o}">${o}</option>`).join('');
+}
+
+function applyFilters() {
+  displayedAnnotations = annotations.filter(a => {
+    const authorOk = !authorFilter.value || a.author === authorFilter.value;
+    const objectOk = !objectFilter.value || a.object === objectFilter.value;
+    return authorOk && objectOk;
+  });
+  rebuildPaths();
+  draw();
+}
+
 function rebuildPaths() {
-  paths = annotations.map(ann => {
+  paths = displayedAnnotations.map(ann => {
     const path = new Path2D();
     ann.points.forEach((pt, i) => {
       const x = pt[0] * canvas.width;
@@ -42,7 +66,7 @@ function rebuildPaths() {
 
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  annotations.forEach((ann, i) => {
+  displayedAnnotations.forEach(ann => {
     ctx.beginPath();
     ann.points.forEach((pt, j) => {
       const x = pt[0] * canvas.width;
@@ -76,7 +100,7 @@ canvas.addEventListener('mousemove', e => {
   const y = e.clientY - rect.top;
   const idx = paths.findIndex(p => ctx.isPointInPath(p, x, y));
   if (idx !== -1) {
-    const ann = annotations[idx];
+    const ann = displayedAnnotations[idx];
     tooltip.textContent = `${ann.object} - ${ann.author}`;
     tooltip.style.left = `${e.clientX + 10}px`;
     tooltip.style.top = `${e.clientY + 10}px`;
@@ -121,16 +145,14 @@ form.addEventListener('submit', e => {
     author: form.author.value,
     object: form.object.value,
     description: form.description.value,
-    material: form.material.value,
-    style: form.style.value,
-    layer: form.layer.value,
+    tags: form.tags.value.split(',').map(t => t.trim()).filter(t => t),
     points: currentPolygon
   };
   annotations.push(ann);
   currentPolygon = [];
   modal.classList.add('hidden');
-  rebuildPaths();
-  draw();
+  updateFilterOptions();
+  applyFilters();
 });
 
 cancelBtn.addEventListener('click', () => {
@@ -149,13 +171,11 @@ downloadBtn.addEventListener('click', () => {
 });
 
 function showInfo(index) {
-  const ann = annotations[index];
+  const ann = displayedAnnotations[index];
   infoPanel.innerHTML =
     `<h2>Annotation</h2>` +
     `<p><strong>Author:</strong> ${ann.author}</p>` +
     `<p><strong>Object:</strong> ${ann.object}</p>` +
     `<p><strong>Description:</strong> ${ann.description || ''}</p>` +
-    `<p><strong>Material:</strong> ${ann.material || ''}</p>` +
-    `<p><strong>Style:</strong> ${ann.style || ''}</p>` +
-    `<p><strong>Layer:</strong> ${ann.layer || ''}</p>`;
+    `<p><strong>Tags:</strong> ${(ann.tags || []).join(', ')}</p>`;
 }

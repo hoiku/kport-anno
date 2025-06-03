@@ -2,11 +2,23 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>KPort Annotation Viewer</title>
+    <title>Annotation Interface</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <h1>Korean Portrait Annotation Viewer</h1>
+<div id="controls">
+    <label>Author
+        <select id="authorFilter">
+            <option value="">All</option>
+        </select>
+    </label>
+    <label>Object
+        <select id="objectFilter">
+            <option value="">All</option>
+        </select>
+    </label>
+</div>
 <div id="viewer">
     <div id="imageContainer">
         <img id="image" src="seo016629-000-007.jpg" alt="Portrait">
@@ -16,7 +28,6 @@
     <aside id="infoPanel"></aside>
 </div>
 <button id="downloadBtn">Download JSON</button>
-
 <div id="modal" class="hidden">
     <div id="modalContent">
         <h2>New Annotation</h2>
@@ -30,14 +41,8 @@
             <label>Description
                 <input type="text" name="description">
             </label>
-            <label>Material
-                <input type="text" name="material">
-            </label>
-            <label>Style
-                <input type="text" name="style">
-            </label>
-            <label>Layer
-                <input type="text" name="layer">
+            <label>Tags
+                <input type="text" name="tags">
             </label>
             <div class="buttons">
                 <button type="submit">Save</button>
