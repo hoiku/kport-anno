@@ -8,6 +8,10 @@ body {
     background: #eee;
 }
 
+#controls button {
+    margin-left: 10px;
+}
+
 #viewer {
     display: flex;
 }
