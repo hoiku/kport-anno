@@ -7,17 +7,45 @@
 </head>
 <body>
 <h1>Korean Portrait Annotation Viewer</h1>
-<div id="filters">
-    <label for="authorSelect">Author:</label>
-    <select id="authorSelect"></select>
-    <label for="objectSelect">Object:</label>
-    <select id="objectSelect"></select>
-</div>
-<div id="container">
-    <img id="image" src="seo016629-000-007.jpg" alt="Portrait">
-    <canvas id="overlay"></canvas>
+<div id="viewer">
+    <div id="imageContainer">
+        <img id="image" src="seo016629-000-007.jpg" alt="Portrait">
+        <canvas id="overlay"></canvas>
+        <div id="tooltip" class="hidden"></div>
+    </div>
+    <aside id="infoPanel"></aside>
 </div>
 <button id="downloadBtn">Download JSON</button>
+
+<div id="modal" class="hidden">
+    <div id="modalContent">
+        <h2>New Annotation</h2>
+        <form id="annotationForm">
+            <label>Author
+                <input type="text" name="author" required>
+            </label>
+            <label>Object
+                <input type="text" name="object" required>
+            </label>
+            <label>Description
+                <input type="text" name="description">
+            </label>
+            <label>Material
+                <input type="text" name="material">
+            </label>
+            <label>Style
+                <input type="text" name="style">
+            </label>
+            <label>Layer
+                <input type="text" name="layer">
+            </label>
+            <div class="buttons">
+                <button type="submit">Save</button>
+                <button type="button" id="cancelBtn">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
 <script src="script.js"></script>
 </body>
 </html>
