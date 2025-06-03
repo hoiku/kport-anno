@@ -48,6 +48,11 @@ body {
     display: none;
 }
 
+/* Ensure hidden class hides modal even though #modal has display:flex */
+#modal.hidden {
+    display: none;
+}
+
 #modal {
     position: fixed;
     top: 0;
