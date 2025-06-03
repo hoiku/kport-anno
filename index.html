@@ -21,6 +21,7 @@
     <button id="startPolygonBtn">Start Polygon</button>
     <button id="addBtn" disabled>Add Annotation</button>
     <button id="editBtn" disabled>Edit Selected</button>
+    <button id="editShapeBtn" disabled>Edit Polygon</button>
     <button id="deleteBtn" disabled>Delete Selected</button>
     <button id="downloadBtn">Download JSON</button>
 </div>
@@ -29,6 +30,10 @@
         <img id="image" src="seo016629-000-007.jpg" alt="Portrait">
         <canvas id="overlay"></canvas>
         <div id="tooltip" class="hidden"></div>
+        <div id="vertexMenu" class="hidden">
+            <button id="vertexDeleteBtn">Delete</button>
+            <button id="vertexMoveBtn">Move</button>
+        </div>
     </div>
     <aside id="infoPanel"></aside>
 </div>
