@@ -11,6 +11,7 @@ const downloadBtn = document.getElementById('downloadBtn');
 const addBtn = document.getElementById('addBtn');
 const editBtn = document.getElementById('editBtn');
 const deleteBtn = document.getElementById('deleteBtn');
+const startPolygonBtn = document.getElementById('startPolygonBtn');
 const authorFilter = document.getElementById('authorFilter');
 const objectFilter = document.getElementById('objectFilter');
 
@@ -24,6 +25,7 @@ let selected = null;
 let editingIndex = null;
 let isDragging = false;
 let dragStart = null;
+let drawingMode = false;
 
 function saveAnnotations() {
   localStorage.setItem('annotations', JSON.stringify(annotations));
@@ -69,8 +71,16 @@ window.addEventListener('resize', () => {
 
 authorFilter.addEventListener('change', applyFilters);
 objectFilter.addEventListener('change', applyFilters);
+startPolygonBtn.addEventListener('click', () => {
+  drawingMode = true;
+  selected = null;
+  currentPolygon = [];
+  updateButtonStates();
+  draw();
+});
 addBtn.addEventListener('click', () => {
   if (selected && selected.type === 'pending') {
+    form.reset();
     modalTitle.textContent = 'New Annotation';
     modal.classList.remove('hidden');
   }
@@ -252,7 +262,8 @@ canvas.addEventListener('click', e => {
   const rect = canvas.getBoundingClientRect();
   const px = e.clientX - rect.left;
   const py = e.clientY - rect.top;
-  if (currentPolygon.length > 0) {
+
+  if (drawingMode) {
     const x = px / canvas.width;
     const y = py / canvas.height;
     currentPolygon.push([x, y]);
@@ -278,14 +289,14 @@ canvas.addEventListener('click', e => {
 
   selected = null;
   updateButtonStates();
-  currentPolygon = [[px / canvas.width, py / canvas.height]];
   draw();
 });
 
 canvas.addEventListener('dblclick', e => {
-  if (currentPolygon.length > 0) {
+  if (drawingMode && currentPolygon.length > 2) {
     pendingPolygons.push(currentPolygon);
     currentPolygon = [];
+    drawingMode = false;
     rebuildPaths();
     selected = { type: 'pending', index: pendingPolygons.length - 1 };
     updateButtonStates();
@@ -319,6 +330,7 @@ form.addEventListener('submit', e => {
     return;
   }
   modal.classList.add('hidden');
+  form.reset();
   saveAnnotations();
   updateFilterOptions();
   applyFilters();
@@ -329,6 +341,7 @@ cancelBtn.addEventListener('click', () => {
   modal.classList.add('hidden');
   editingIndex = null;
   modalTitle.textContent = 'New Annotation';
+  form.reset();
   updateButtonStates();
 });
 
@@ -337,6 +350,7 @@ modal.addEventListener('click', e => {
     modal.classList.add('hidden');
     editingIndex = null;
     modalTitle.textContent = 'New Annotation';
+    form.reset();
     updateButtonStates();
   }
 });
@@ -364,4 +378,5 @@ function updateButtonStates() {
   addBtn.disabled = !(selected && selected.type === 'pending');
   editBtn.disabled = !(selected && selected.type === 'annotation');
   deleteBtn.disabled = !selected;
+  startPolygonBtn.disabled = drawingMode;
 }
