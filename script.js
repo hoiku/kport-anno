@@ -5,9 +5,11 @@ const infoPanel = document.getElementById('infoPanel');
 const modal = document.getElementById('modal');
 const form = document.getElementById('annotationForm');
 const cancelBtn = document.getElementById('cancelBtn');
+const modalTitle = document.getElementById('modalTitle');
 const tooltip = document.getElementById('tooltip');
 const downloadBtn = document.getElementById('downloadBtn');
 const addBtn = document.getElementById('addBtn');
+const editBtn = document.getElementById('editBtn');
 const deleteBtn = document.getElementById('deleteBtn');
 const authorFilter = document.getElementById('authorFilter');
 const objectFilter = document.getElementById('objectFilter');
@@ -19,17 +21,35 @@ let paths = [];
 let pendingPaths = [];
 let currentPolygon = [];
 let selected = null;
+let editingIndex = null;
 let isDragging = false;
 let dragStart = null;
 
-fetch('annotations.json')
-  .then(r => r.json())
-  .then(data => {
-    annotations = data;
-    updateFilterOptions();
-    applyFilters();
-    updateButtonStates();
-  });
+function saveAnnotations() {
+  localStorage.setItem('annotations', JSON.stringify(annotations));
+}
+
+function loadAnnotations() {
+  const data = localStorage.getItem('annotations');
+  return data ? JSON.parse(data) : null;
+}
+
+const stored = loadAnnotations();
+if (stored) {
+  annotations = stored;
+  updateFilterOptions();
+  applyFilters();
+  updateButtonStates();
+} else {
+  fetch('annotations.json')
+    .then(r => r.json())
+    .then(data => {
+      annotations = data;
+      updateFilterOptions();
+      applyFilters();
+      updateButtonStates();
+    });
+}
 
 function setCanvasSize() {
   canvas.width = image.clientWidth;
@@ -51,8 +71,21 @@ authorFilter.addEventListener('change', applyFilters);
 objectFilter.addEventListener('change', applyFilters);
 addBtn.addEventListener('click', () => {
   if (selected && selected.type === 'pending') {
+    modalTitle.textContent = 'New Annotation';
     modal.classList.remove('hidden');
   }
+});
+editBtn.addEventListener('click', () => {
+  if (!(selected && selected.type === 'annotation')) return;
+  const ann = displayedAnnotations[selected.index];
+  editingIndex = annotations.indexOf(ann);
+  if (editingIndex === -1) return;
+  form.author.value = ann.author;
+  form.object.value = ann.object;
+  form.description.value = ann.description || '';
+  form.tags.value = (ann.tags || []).join(', ');
+  modalTitle.textContent = 'Edit Annotation';
+  modal.classList.remove('hidden');
 });
 deleteBtn.addEventListener('click', () => {
   if (!selected) return;
@@ -64,6 +97,7 @@ deleteBtn.addEventListener('click', () => {
     if (idx !== -1) annotations.splice(idx, 1);
   }
   selected = null;
+  saveAnnotations();
   updateFilterOptions();
   applyFilters();
   updateButtonStates();
@@ -208,6 +242,9 @@ canvas.addEventListener('mousedown', e => {
 });
 
 canvas.addEventListener('mouseup', () => {
+  if (isDragging && selected && selected.type === 'annotation') {
+    saveAnnotations();
+  }
   isDragging = false;
 });
 
@@ -259,18 +296,30 @@ canvas.addEventListener('dblclick', e => {
 
 form.addEventListener('submit', e => {
   e.preventDefault();
-  if (!(selected && selected.type === 'pending')) return;
-  const ann = {
-    author: form.author.value,
-    object: form.object.value,
-    description: form.description.value,
-    tags: form.tags.value.split(',').map(t => t.trim()).filter(t => t),
-    points: pendingPolygons[selected.index]
-  };
-  annotations.push(ann);
-  pendingPolygons.splice(selected.index, 1);
-  selected = null;
+  if (editingIndex !== null) {
+    const ann = annotations[editingIndex];
+    ann.author = form.author.value;
+    ann.object = form.object.value;
+    ann.description = form.description.value;
+    ann.tags = form.tags.value.split(',').map(t => t.trim()).filter(t => t);
+    editingIndex = null;
+    selected = null;
+  } else if (selected && selected.type === 'pending') {
+    const ann = {
+      author: form.author.value,
+      object: form.object.value,
+      description: form.description.value,
+      tags: form.tags.value.split(',').map(t => t.trim()).filter(t => t),
+      points: pendingPolygons[selected.index]
+    };
+    annotations.push(ann);
+    pendingPolygons.splice(selected.index, 1);
+    selected = null;
+  } else {
+    return;
+  }
   modal.classList.add('hidden');
+  saveAnnotations();
   updateFilterOptions();
   applyFilters();
   updateButtonStates();
@@ -278,11 +327,17 @@ form.addEventListener('submit', e => {
 
 cancelBtn.addEventListener('click', () => {
   modal.classList.add('hidden');
+  editingIndex = null;
+  modalTitle.textContent = 'New Annotation';
+  updateButtonStates();
 });
 
 modal.addEventListener('click', e => {
   if (e.target === modal) {
     modal.classList.add('hidden');
+    editingIndex = null;
+    modalTitle.textContent = 'New Annotation';
+    updateButtonStates();
   }
 });
 
@@ -307,5 +362,6 @@ function showInfo(index) {
 
 function updateButtonStates() {
   addBtn.disabled = !(selected && selected.type === 'pending');
+  editBtn.disabled = !(selected && selected.type === 'annotation');
   deleteBtn.disabled = !selected;
 }
