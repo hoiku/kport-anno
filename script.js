@@ -24,11 +24,21 @@ fetch('annotations.json')
     applyFilters();
   });
 
+function setCanvasSize() {
+  canvas.width = image.clientWidth;
+  canvas.height = image.clientHeight;
+}
+
 image.onload = () => {
-  canvas.width = image.width;
-  canvas.height = image.height;
+  setCanvasSize();
   applyFilters();
 };
+
+window.addEventListener('resize', () => {
+  setCanvasSize();
+  rebuildPaths();
+  draw();
+});
 
 authorFilter.addEventListener('change', applyFilters);
 objectFilter.addEventListener('change', applyFilters);
