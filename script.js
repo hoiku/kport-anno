@@ -38,6 +38,16 @@ let selectedVertex = null;
 let movingVertex = false;
 let isDraggingVertex = false;
 
+function updateVertexMenuPosition() {
+  if (selectedVertex === null || !editingPolygon) return;
+  const rect = canvas.getBoundingClientRect();
+  const pt = editingPolygon[selectedVertex];
+  const x = rect.left + pt[0] * canvas.width;
+  const y = rect.top + pt[1] * canvas.height;
+  vertexMenu.style.left = `${x - vertexMenu.offsetWidth / 2}px`;
+  vertexMenu.style.top = `${y - vertexMenu.offsetHeight - 5}px`;
+}
+
 function saveAnnotations() {
   localStorage.setItem('annotations', JSON.stringify(annotations));
 }
@@ -133,12 +143,14 @@ editShapeBtn.addEventListener('click', () => {
     editingPolygon = (selected.type === 'annotation')
       ? displayedAnnotations[selected.index].points
       : pendingPolygons[selected.index];
+    vertexMoveBtn.textContent = 'Move';
   } else {
     shapeEditMode = false;
     vertexMenu.classList.add('hidden');
     selectedVertex = null;
     movingVertex = false;
     isDraggingVertex = false;
+    vertexMoveBtn.textContent = 'Move';
     if (editingType === 'annotation') {
       saveAnnotations();
     }
@@ -153,6 +165,9 @@ vertexDeleteBtn.addEventListener('click', () => {
     editingPolygon.splice(selectedVertex, 1);
     selectedVertex = null;
     vertexMenu.classList.add('hidden');
+    if (editingType === 'annotation') {
+      saveAnnotations();
+    }
     rebuildPaths();
     draw();
   }
@@ -160,9 +175,21 @@ vertexDeleteBtn.addEventListener('click', () => {
 
 vertexMoveBtn.addEventListener('click', () => {
   if (editingPolygon && selectedVertex !== null) {
-    movingVertex = true;
-    isDraggingVertex = false;
-    vertexMenu.classList.add('hidden');
+    if (!movingVertex) {
+      movingVertex = true;
+      isDraggingVertex = false;
+      vertexMoveBtn.textContent = 'Finish Move';
+    } else {
+      movingVertex = false;
+      isDraggingVertex = false;
+      vertexMoveBtn.textContent = 'Move';
+      if (editingType === 'annotation') {
+        saveAnnotations();
+      }
+      rebuildPaths();
+      draw();
+    }
+    updateVertexMenuPosition();
   }
 });
 
@@ -277,6 +304,7 @@ canvas.addEventListener('mousemove', e => {
       rebuildPaths();
       draw();
     }
+    updateVertexMenuPosition();
     return;
   }
   if (isDragging && selected) {
@@ -312,7 +340,7 @@ canvas.addEventListener('mouseleave', () => {
   if (shapeEditMode) {
     movingVertex = false;
     isDraggingVertex = false;
-    vertexMenu.classList.add('hidden');
+    updateVertexMenuPosition();
   }
 });
 
@@ -340,8 +368,7 @@ canvas.addEventListener('mouseup', () => {
   if (shapeEditMode) {
     if (isDraggingVertex) {
       isDraggingVertex = false;
-      movingVertex = false;
-      vertexMenu.classList.remove('hidden');
+      updateVertexMenuPosition();
     }
     return;
   }
@@ -369,9 +396,8 @@ canvas.addEventListener('click', e => {
       });
       if (found !== -1) {
         selectedVertex = found;
-        vertexMenu.style.left = `${e.clientX + 5}px`;
-        vertexMenu.style.top = `${e.clientY + 5}px`;
         vertexMenu.classList.remove('hidden');
+        updateVertexMenuPosition();
       } else {
         vertexMenu.classList.add('hidden');
         selectedVertex = null;
