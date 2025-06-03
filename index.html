@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>KPort Annotation Viewer</title>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        #container { position: relative; display: inline-block; }
+        canvas { position: absolute; top: 0; left: 0; }
+        #filters { margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+<h1>Korean Portrait Annotation Viewer</h1>
+<div id="filters">
+    <label for="authorSelect">Author:</label>
+    <select id="authorSelect"></select>
+    <label for="objectSelect">Object:</label>
+    <select id="objectSelect"></select>
+</div>
+<div id="container">
+    <img id="image" src="portrait.jpg" alt="Portrait">
+    <canvas id="overlay"></canvas>
+</div>
+<script>
+const image = document.getElementById('image');
+const canvas = document.getElementById('overlay');
+const ctx = canvas.getContext('2d');
+const authorSelect = document.getElementById('authorSelect');
+const objectSelect = document.getElementById('objectSelect');
+let annotations = [];
+
+fetch('annotations.json')
+    .then(res => res.json())
+    .then(data => {
+        annotations = data;
+        populateFilters();
+        draw();
+    });
+
+function populateFilters() {
+    const authors = [...new Set(annotations.map(a => a.author))];
+    const objects = [...new Set(annotations.map(a => a.object))];
+    authorSelect.innerHTML = '<option value="all">All</option>' + authors.map(a => `<option value="${a}">${a}</option>`).join('');
+    objectSelect.innerHTML = '<option value="all">All</option>' + objects.map(o => `<option value="${o}">${o}</option>`).join('');
+}
+
+function draw() {
+    canvas.width = image.width;
+    canvas.height = image.height;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const authorFilter = authorSelect.value;
+    const objectFilter = objectSelect.value;
+    annotations
+        .filter(a => (authorFilter === 'all' || a.author === authorFilter))
+        .filter(a => (objectFilter === 'all' || a.object === objectFilter))
+        .forEach(a => {
+            ctx.beginPath();
+            a.points.forEach((p, i) => {
+                const x = p[0] * canvas.width;
+                const y = p[1] * canvas.height;
+                if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+            });
+            ctx.closePath();
+            ctx.strokeStyle = 'red';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        });
+}
+
+authorSelect.addEventListener('change', draw);
+objectSelect.addEventListener('change', draw);
+image.onload = draw;
+</script>
+</body>
+</html>
