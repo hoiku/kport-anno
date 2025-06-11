@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { supabase as sb } from './db.js';
 
 const image = document.getElementById('image');
 const canvas = document.getElementById('overlay');
@@ -21,10 +21,7 @@ const startPolygonBtn = document.getElementById('startPolygonBtn');
 const authorFilter = document.getElementById('authorFilter');
 const objectFilter = document.getElementById('objectFilter');
 
-// Supabase client configuration
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_KEY;
-const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+// Supabase client imported from db.js as `sb`
 
 let annotations = [];
 let displayedAnnotations = [];
