@@ -1,0 +1,10 @@
+{
+  "name": "kport-anno",
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "18"
+    }
+  },
+  "forwardPorts": [5173],
+  "postCreateCommand": "npm install"
+}
