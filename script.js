@@ -55,37 +55,38 @@ function updateVertexMenuPosition() {
   vertexMenu.style.top = `${y - vertexMenu.offsetHeight - 5}px`;
 }
 
-async function fetchAnnotations() {
+async function loadAnnotations() {
   const { data, error } = await sb.from('annotations').select('*');
   if (error) {
     console.error('Failed to load annotations', error);
     return [];
   }
-  return data || [];
+  annotations = data || [];
+  console.log('Loaded annotations', annotations.length);
+  updateFilterOptions();
+  applyFilters();
+  return annotations;
 }
 
-async function addAnnotation(ann) {
-  const { data, error } = await sb.from('annotations').insert([ann]).select();
+async function saveAnnotation(annotation) {
+  const { data, error } = await sb.from('annotations').insert([annotation]).select();
   if (error) {
     console.error('Failed to add annotation', error);
     return null;
   }
+  console.log('Added annotation', data[0].id);
   return data[0];
 }
 
-async function updateAnnotation(ann) {
+async function updateAnnotation(id, newData) {
   const { error } = await sb
     .from('annotations')
-    .update({
-      author: ann.author,
-      object: ann.object,
-      description: ann.description,
-      tags: ann.tags,
-      points: ann.points,
-    })
-    .eq('id', ann.id);
+    .update(newData)
+    .eq('id', id);
   if (error) {
     console.error('Failed to update annotation', error);
+  } else {
+    console.log('Updated annotation', id);
   }
 }
 
@@ -93,13 +94,13 @@ async function deleteAnnotation(id) {
   const { error } = await sb.from('annotations').delete().eq('id', id);
   if (error) {
     console.error('Failed to delete annotation', error);
+  } else {
+    console.log('Deleted annotation', id);
   }
 }
 
 (async () => {
-  annotations = await fetchAnnotations();
-  updateFilterOptions();
-  applyFilters();
+  await loadAnnotations();
   updateButtonStates();
 })();
 
@@ -172,7 +173,7 @@ editShapeBtn.addEventListener('click', async () => {
     editingType = selected.type;
     editingIdx = selected.index;
     editingPolygon = (selected.type === 'annotation')
-      ? displayedAnnotations[selected.index].points
+      ? displayedAnnotations[selected.index].polygon
       : pendingPolygons[selected.index];
     vertexMoveBtn.textContent = 'Move';
   } else {
@@ -183,7 +184,9 @@ editShapeBtn.addEventListener('click', async () => {
     isDraggingVertex = false;
     vertexMoveBtn.textContent = 'Move';
     if (editingType === 'annotation') {
-      await updateAnnotation(displayedAnnotations[editingIdx]);
+      await updateAnnotation(displayedAnnotations[editingIdx].id, {
+        polygon: displayedAnnotations[editingIdx].polygon
+      });
     }
     rebuildPaths();
     draw();
@@ -197,7 +200,9 @@ vertexDeleteBtn.addEventListener('click', async () => {
     selectedVertex = null;
     vertexMenu.classList.add('hidden');
     if (editingType === 'annotation') {
-      await updateAnnotation(displayedAnnotations[editingIdx]);
+      await updateAnnotation(displayedAnnotations[editingIdx].id, {
+        polygon: displayedAnnotations[editingIdx].polygon
+      });
     }
     rebuildPaths();
     draw();
@@ -215,7 +220,9 @@ vertexMoveBtn.addEventListener('click', async () => {
       isDraggingVertex = false;
       vertexMoveBtn.textContent = 'Move';
       if (editingType === 'annotation') {
-        await updateAnnotation(displayedAnnotations[editingIdx]);
+        await updateAnnotation(displayedAnnotations[editingIdx].id, {
+          polygon: displayedAnnotations[editingIdx].polygon
+        });
       }
       rebuildPaths();
       draw();
@@ -246,7 +253,7 @@ function applyFilters() {
 function rebuildPaths() {
   paths = displayedAnnotations.map(ann => {
     const path = new Path2D();
-    ann.points.forEach((pt, i) => {
+    ann.polygon.forEach((pt, i) => {
       const x = pt[0] * canvas.width;
       const y = pt[1] * canvas.height;
       if (i === 0) path.moveTo(x, y); else path.lineTo(x, y);
@@ -270,7 +277,7 @@ function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   displayedAnnotations.forEach((ann, i) => {
     ctx.beginPath();
-    ann.points.forEach((pt, j) => {
+    ann.polygon.forEach((pt, j) => {
       const x = pt[0] * canvas.width;
       const y = pt[1] * canvas.height;
       if (j === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
@@ -344,7 +351,7 @@ canvas.addEventListener('mousemove', e => {
     dragStart = { x, y };
     let poly;
     if (selected.type === 'annotation') {
-      poly = displayedAnnotations[selected.index].points;
+      poly = displayedAnnotations[selected.index].polygon;
     } else {
       poly = pendingPolygons[selected.index];
     }
@@ -404,7 +411,9 @@ canvas.addEventListener('mouseup', async () => {
     return;
   }
   if (isDragging && selected && selected.type === 'annotation') {
-    await updateAnnotation(displayedAnnotations[selected.index]);
+    await updateAnnotation(displayedAnnotations[selected.index].id, {
+      polygon: displayedAnnotations[selected.index].polygon
+    });
   }
   isDragging = false;
 });
@@ -488,7 +497,12 @@ form.addEventListener('submit', async e => {
     ann.object = form.object.value;
     ann.description = form.description.value;
     ann.tags = form.tags.value.split(',').map(t => t.trim()).filter(t => t);
-    await updateAnnotation(ann);
+    await updateAnnotation(ann.id, {
+      author: ann.author,
+      object: ann.object,
+      description: ann.description,
+      tags: ann.tags
+    });
     editingIndex = null;
     selected = null;
   } else if (selected && selected.type === 'pending') {
@@ -497,9 +511,9 @@ form.addEventListener('submit', async e => {
       object: form.object.value,
       description: form.description.value,
       tags: form.tags.value.split(',').map(t => t.trim()).filter(t => t),
-      points: pendingPolygons[selected.index]
+      polygon: pendingPolygons[selected.index]
     };
-    const inserted = await addAnnotation(ann);
+    const inserted = await saveAnnotation(ann);
     if (inserted) {
       annotations.push(inserted);
     }

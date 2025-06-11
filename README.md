@@ -11,6 +11,9 @@ This project is a Vite-based Korean portrait annotation viewer and editor with S
    VITE_SUPABASE_KEY=your-anon-key
    ```
 
+After the container starts, run `npm run dev` to launch the Vite dev server. The
+app will be available on port **5173**.
+
 ## Development
 
 Run the dev server:
@@ -28,6 +31,15 @@ The app will be available on port **5173**.
 - Filter annotations by author and object
 - Download annotations as JSON
 - Data loaded from and saved to the Supabase `annotations` table
+
+## Using the Annotation Editor
+
+1. Click **Start Polygon** and click on the image to place vertices.
+2. Double click to finish the polygon and create a pending annotation.
+3. Select the pending polygon and click **Add Annotation** to enter metadata.
+4. Use **Edit Selected** to change metadata of an existing annotation.
+5. Use **Edit Polygon** to adjust vertices or **Delete Selected** to remove.
+6. Click **Download JSON** to export all annotations.
 
 ## Build & Preview
 
