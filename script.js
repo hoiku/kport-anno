@@ -19,9 +19,13 @@ const startPolygonBtn = document.getElementById('startPolygonBtn');
 const authorFilter = document.getElementById('authorFilter');
 const objectFilter = document.getElementById('objectFilter');
 
-// Supabase client configuration - replace with your project credentials
-const SUPABASE_URL = 'YOUR_SUPABASE_URL';
-const SUPABASE_KEY = 'YOUR_SUPABASE_KEY';
+// Supabase client configuration
+// The key is expected to be provided via the SUPABASE_KEY environment variable
+// when the script is bundled or served in a Node environment. This value will
+// not be available when running index.html directly in the browser without a
+// build step that injects the key.
+const SUPABASE_URL = 'https://vijkisltymhfwzpcdywr.supabase.co';
+const SUPABASE_KEY = process.env.SUPABASE_KEY;
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let annotations = [];
