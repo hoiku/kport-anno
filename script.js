@@ -1,3 +1,5 @@
+import { createClient } from '@supabase/supabase-js';
+
 const image = document.getElementById('image');
 const canvas = document.getElementById('overlay');
 const ctx = canvas.getContext('2d');
@@ -20,13 +22,9 @@ const authorFilter = document.getElementById('authorFilter');
 const objectFilter = document.getElementById('objectFilter');
 
 // Supabase client configuration
-// The key is expected to be provided via the SUPABASE_KEY environment variable
-// when the script is bundled or served in a Node environment. This value will
-// not be available when running index.html directly in the browser without a
-// build step that injects the key.
-const SUPABASE_URL = 'https://vijkisltymhfwzpcdywr.supabase.co';
-const SUPABASE_KEY = process.env.SUPABASE_KEY;
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_KEY;
+const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let annotations = [];
 let displayedAnnotations = [];
