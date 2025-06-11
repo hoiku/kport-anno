@@ -19,6 +19,11 @@ const startPolygonBtn = document.getElementById('startPolygonBtn');
 const authorFilter = document.getElementById('authorFilter');
 const objectFilter = document.getElementById('objectFilter');
 
+// Supabase client configuration - replace with your project credentials
+const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+const SUPABASE_KEY = 'YOUR_SUPABASE_KEY';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
 let annotations = [];
 let displayedAnnotations = [];
 let pendingPolygons = [];
@@ -48,31 +53,53 @@ function updateVertexMenuPosition() {
   vertexMenu.style.top = `${y - vertexMenu.offsetHeight - 5}px`;
 }
 
-function saveAnnotations() {
-  localStorage.setItem('annotations', JSON.stringify(annotations));
+async function fetchAnnotations() {
+  const { data, error } = await sb.from('annotations').select('*');
+  if (error) {
+    console.error('Failed to load annotations', error);
+    return [];
+  }
+  return data || [];
 }
 
-function loadAnnotations() {
-  const data = localStorage.getItem('annotations');
-  return data ? JSON.parse(data) : null;
+async function addAnnotation(ann) {
+  const { data, error } = await sb.from('annotations').insert([ann]).select();
+  if (error) {
+    console.error('Failed to add annotation', error);
+    return null;
+  }
+  return data[0];
 }
 
-const stored = loadAnnotations();
-if (stored) {
-  annotations = stored;
+async function updateAnnotation(ann) {
+  const { error } = await sb
+    .from('annotations')
+    .update({
+      author: ann.author,
+      object: ann.object,
+      description: ann.description,
+      tags: ann.tags,
+      points: ann.points,
+    })
+    .eq('id', ann.id);
+  if (error) {
+    console.error('Failed to update annotation', error);
+  }
+}
+
+async function deleteAnnotation(id) {
+  const { error } = await sb.from('annotations').delete().eq('id', id);
+  if (error) {
+    console.error('Failed to delete annotation', error);
+  }
+}
+
+(async () => {
+  annotations = await fetchAnnotations();
   updateFilterOptions();
   applyFilters();
   updateButtonStates();
-} else {
-  fetch('annotations.json')
-    .then(r => r.json())
-    .then(data => {
-      annotations = data;
-      updateFilterOptions();
-      applyFilters();
-      updateButtonStates();
-    });
-}
+})();
 
 function setCanvasSize() {
   canvas.width = image.clientWidth;
@@ -118,23 +145,25 @@ editBtn.addEventListener('click', () => {
   modalTitle.textContent = 'Edit Annotation';
   modal.classList.remove('hidden');
 });
-deleteBtn.addEventListener('click', () => {
+deleteBtn.addEventListener('click', async () => {
   if (!selected) return;
   if (selected.type === 'pending') {
     pendingPolygons.splice(selected.index, 1);
   } else if (selected.type === 'annotation') {
     const ann = displayedAnnotations[selected.index];
     const idx = annotations.indexOf(ann);
-    if (idx !== -1) annotations.splice(idx, 1);
+    if (idx !== -1) {
+      annotations.splice(idx, 1);
+      await deleteAnnotation(ann.id);
+    }
   }
   selected = null;
-  saveAnnotations();
   updateFilterOptions();
   applyFilters();
   updateButtonStates();
 });
 
-editShapeBtn.addEventListener('click', () => {
+editShapeBtn.addEventListener('click', async () => {
   if (!selected && !shapeEditMode) return;
   if (!shapeEditMode) {
     shapeEditMode = true;
@@ -152,7 +181,7 @@ editShapeBtn.addEventListener('click', () => {
     isDraggingVertex = false;
     vertexMoveBtn.textContent = 'Move';
     if (editingType === 'annotation') {
-      saveAnnotations();
+      await updateAnnotation(displayedAnnotations[editingIdx]);
     }
     rebuildPaths();
     draw();
@@ -160,20 +189,20 @@ editShapeBtn.addEventListener('click', () => {
   updateButtonStates();
 });
 
-vertexDeleteBtn.addEventListener('click', () => {
+vertexDeleteBtn.addEventListener('click', async () => {
   if (editingPolygon && selectedVertex !== null) {
     editingPolygon.splice(selectedVertex, 1);
     selectedVertex = null;
     vertexMenu.classList.add('hidden');
     if (editingType === 'annotation') {
-      saveAnnotations();
+      await updateAnnotation(displayedAnnotations[editingIdx]);
     }
     rebuildPaths();
     draw();
   }
 });
 
-vertexMoveBtn.addEventListener('click', () => {
+vertexMoveBtn.addEventListener('click', async () => {
   if (editingPolygon && selectedVertex !== null) {
     if (!movingVertex) {
       movingVertex = true;
@@ -184,7 +213,7 @@ vertexMoveBtn.addEventListener('click', () => {
       isDraggingVertex = false;
       vertexMoveBtn.textContent = 'Move';
       if (editingType === 'annotation') {
-        saveAnnotations();
+        await updateAnnotation(displayedAnnotations[editingIdx]);
       }
       rebuildPaths();
       draw();
@@ -364,7 +393,7 @@ canvas.addEventListener('mousedown', e => {
   }
 });
 
-canvas.addEventListener('mouseup', () => {
+canvas.addEventListener('mouseup', async () => {
   if (shapeEditMode) {
     if (isDraggingVertex) {
       isDraggingVertex = false;
@@ -373,7 +402,7 @@ canvas.addEventListener('mouseup', () => {
     return;
   }
   if (isDragging && selected && selected.type === 'annotation') {
-    saveAnnotations();
+    await updateAnnotation(displayedAnnotations[selected.index]);
   }
   isDragging = false;
 });
@@ -449,7 +478,7 @@ canvas.addEventListener('dblclick', e => {
   e.preventDefault();
 });
 
-form.addEventListener('submit', e => {
+form.addEventListener('submit', async e => {
   e.preventDefault();
   if (editingIndex !== null) {
     const ann = annotations[editingIndex];
@@ -457,6 +486,7 @@ form.addEventListener('submit', e => {
     ann.object = form.object.value;
     ann.description = form.description.value;
     ann.tags = form.tags.value.split(',').map(t => t.trim()).filter(t => t);
+    await updateAnnotation(ann);
     editingIndex = null;
     selected = null;
   } else if (selected && selected.type === 'pending') {
@@ -467,7 +497,10 @@ form.addEventListener('submit', e => {
       tags: form.tags.value.split(',').map(t => t.trim()).filter(t => t),
       points: pendingPolygons[selected.index]
     };
-    annotations.push(ann);
+    const inserted = await addAnnotation(ann);
+    if (inserted) {
+      annotations.push(inserted);
+    }
     pendingPolygons.splice(selected.index, 1);
     selected = null;
   } else {
@@ -475,7 +508,6 @@ form.addEventListener('submit', e => {
   }
   modal.classList.add('hidden');
   form.reset();
-  saveAnnotations();
   updateFilterOptions();
   applyFilters();
   updateButtonStates();
