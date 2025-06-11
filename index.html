@@ -1,67 +1,71 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Annotation Interface</title>
-    
+  <meta charset="UTF-8" />
+  <title>Annotation Interface</title>
+  
   <script type="module" crossorigin src="/kport-anno/assets/index-ef71853a.js"></script>
   <link rel="stylesheet" href="/kport-anno/assets/index-b7ba46da.css">
 </head>
 <body>
 <h1>Korean Portrait Annotation Viewer</h1>
+
 <div id="controls">
-    <label>Author
-        <select id="authorFilter">
-            <option value="">All</option>
-        </select>
-    </label>
-    <label>Object
-        <select id="objectFilter">
-            <option value="">All</option>
-        </select>
-    </label>
-    <button id="startPolygonBtn">Start Polygon</button>
-    <button id="addBtn" disabled>Add Annotation</button>
-    <button id="editBtn" disabled>Edit Selected</button>
-    <button id="editShapeBtn" disabled>Edit Polygon</button>
-    <button id="deleteBtn" disabled>Delete Selected</button>
-    <button id="downloadBtn">Download JSON</button>
+  <label>Author
+    <select id="authorFilter">
+      <option value="">All</option>
+    </select>
+  </label>
+  <label>Object
+    <select id="objectFilter">
+      <option value="">All</option>
+    </select>
+  </label>
+  <button id="startPolygonBtn">Start Polygon</button>
+  <button id="addBtn" disabled>Add Annotation</button>
+  <button id="editBtn" disabled>Edit Selected</button>
+  <button id="editShapeBtn" disabled>Edit Polygon</button>
+  <button id="deleteBtn" disabled>Delete Selected</button>
+  <button id="downloadBtn">Download JSON</button>
 </div>
+
 <div id="viewer">
-    <div id="imageContainer">
-        <img id="image" src="/kport-anno/seo016629-000-007.jpg" alt="Portrait">
-        <canvas id="overlay"></canvas>
-        <div id="tooltip" class="hidden"></div>
-        <div id="vertexMenu" class="hidden">
-            <button id="vertexDeleteBtn">Delete</button>
-            <button id="vertexMoveBtn">Move</button>
-        </div>
+  <div id="imageContainer">
+    <img id="image" src="./seo016629-000-007.jpg" alt="Portrait" />
+    <canvas id="overlay"></canvas>
+    <div id="tooltip" class="hidden"></div>
+    <div id="vertexMenu" class="hidden">
+      <button id="vertexDeleteBtn">Delete</button>
+      <button id="vertexMoveBtn">Move</button>
     </div>
-    <aside id="infoPanel"></aside>
+  </div>
+  <aside id="infoPanel"></aside>
 </div>
+
 <div id="modal" class="hidden">
-    <div id="modalContent">
-        <h2 id="modalTitle">New Annotation</h2>
-        <form id="annotationForm">
-            <label>Author
-                <input type="text" name="author" required>
-            </label>
-            <label>Object
-                <input type="text" name="object" required>
-            </label>
-            <label>Description
-                <input type="text" name="description">
-            </label>
-            <label>Tags
-                <input type="text" name="tags">
-            </label>
-            <div class="buttons">
-                <button type="submit">Save</button>
-                <button type="button" id="cancelBtn">Cancel</button>
-            </div>
-        </form>
-    </div>
+  <div id="modalContent">
+    <h2 id="modalTitle">New Annotation</h2>
+    <form id="annotationForm">
+      <label>Author
+        <input type="text" name="author" required />
+      </label>
+      <label>Object
+        <input type="text" name="object" required />
+      </label>
+      <label>Description
+        <input type="text" name="description" />
+      </label>
+      <label>Tags
+        <input type="text" name="tags" />
+      </label>
+      <div class="buttons">
+        <button type="submit">Save</button>
+        <button type="button" id="cancelBtn">Cancel</button>
+      </div>
+    </form>
+  </div>
 </div>
+
 
 </body>
 </html>
