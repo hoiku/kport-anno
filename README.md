@@ -49,3 +49,5 @@ npm run preview
 ```
 
 The project is configured to deploy the built `dist/` folder to the `gh-pages` branch using GitHub Actions.
+
+
