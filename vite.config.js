@@ -1,7 +1,7 @@
 import { defineConfig, loadEnv } from 'vite'
 
 export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd()) // .env 값 로딩
+  const env = loadEnv(mode, process.cwd())
 
   return {
     base: '/kport-anno/',
@@ -9,7 +9,10 @@ export default defineConfig(({ mode }) => {
       outDir: 'dist'
     },
     define: {
-      'import.meta.env': env
+      'import.meta.env': {
+        VITE_SUPABASE_URL: JSON.stringify(env.VITE_SUPABASE_URL),
+        VITE_SUPABASE_KEY: JSON.stringify(env.VITE_SUPABASE_KEY),
+      }
     }
   }
 })
