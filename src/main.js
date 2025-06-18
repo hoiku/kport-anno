@@ -55,7 +55,6 @@ function updateVertexMenuPosition() {
 async function loadAnnotations() {
   const { data, error } = await sb.from('annotations').select('*');
 
-  console.log('▶ Supabase data:', data, 'error:', error);
   // 아래처럼 화면에 결과 뿌려보기
   const info = document.getElementById('infoPanel');
   info.textContent = error
