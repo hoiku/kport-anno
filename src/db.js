@@ -5,3 +5,5 @@ const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_KEY;
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
+console.log('URL:', SUPABASE_URL);
+console.log('Key:', SUPABASE_KEY);
