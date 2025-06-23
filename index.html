@@ -9,6 +9,8 @@
 <h1>Korean Portrait Annotation Viewer</h1>
 <div id="login-root"></div>
 
+<!-- Wrapped annotation interface for conditional rendering -->
+<div id="annotator-ui" class="hidden">
 <div id="controls">
   <label>Author
     <select id="authorFilter">
@@ -64,6 +66,7 @@
     </form>
   </div>
 </div>
+</div> <!-- end annotator-ui -->
 
 <script type="module" src="./src/main.js"></script>
 <script type="module" src="./src/login.jsx"></script>
