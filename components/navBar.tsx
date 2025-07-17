@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import ThemeSwitcher from './themeSwitcher'
-import AuthButton from './authButton'
+import AuthButton from './auth-button'
 
 export default function Navbar() {
   return (
