@@ -3,14 +3,14 @@
 import { useEffect, useState } from 'react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { useRouter } from 'next/navigation'
+import type { User } from '@supabase/supabase-js' // ✅ 추가
 
 export default function HomePage() {
   const supabase = createClientComponentClient()
   const router = useRouter()
-  const [user, setUser] = useState(null)
+  const [user, setUser] = useState<User | null>(null) // ✅ 타입 명시
   const [loading, setLoading] = useState(true)
 
-  // 세션 확인 (자동 이동 ❌)
   useEffect(() => {
     const checkUser = async () => {
       try {
@@ -26,7 +26,6 @@ export default function HomePage() {
     checkUser()
   }, [])
 
-  // Google 로그인
   const handleLogin = async () => {
     try {
       await supabase.auth.signInWithOAuth({
@@ -41,7 +40,6 @@ export default function HomePage() {
     }
   }
 
-  // 대시보드로 수동 이동
   const goToDashboard = () => {
     router.push('/dashboard')
   }
@@ -72,13 +70,4 @@ export default function HomePage() {
             </p>
             <button
               onClick={goToDashboard}
-              className="w-full bg-blue-600 text-white rounded-md py-2 px-4 text-sm font-medium shadow hover:bg-blue-700"
-            >
-              대시보드 확인
-            </button>
-          </div>
-        )}
-      </div>
-    </main>
-  )
-}
+              className="w-full bg-blue-600 text-white
