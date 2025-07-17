@@ -70,4 +70,13 @@ export default function HomePage() {
             </p>
             <button
               onClick={goToDashboard}
-              className="w-full bg-blue-600 text-white
+              className="w-full bg-blue-600 text-white rounded-md py-2 px-4 text-sm font-medium shadow hover:bg-blue-700"
+            >
+              대시보드 확인
+            </button>
+          </div>
+        )}
+      </div>
+    </main>
+  )
+}
