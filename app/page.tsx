@@ -1,4 +1,4 @@
-import Navbar from '@/components/navbar'
+import Navbar from '@/components/navBar'
 import RoleGate from '@/components/roleGate'
 
 export default function HomePage() {
