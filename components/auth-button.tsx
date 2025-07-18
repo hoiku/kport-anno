@@ -5,7 +5,7 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { useRouter } from 'next/navigation'
 import type { User } from '@supabase/supabase-js'
 
-export default function AuthButton() {
+export const AuthButton = () => {
   const supabase = createClientComponentClient()
   const router = useRouter()
   const [user, setUser] = useState<User | null>(null)
