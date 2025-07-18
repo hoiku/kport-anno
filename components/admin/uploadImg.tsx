@@ -2,12 +2,10 @@
 
 import { useState } from 'react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { useUser } from '@/lib/hooks/useUser' // 사용자 역할 확인용 훅 (직접 만든 경우)
 import { v4 as uuidv4 } from 'uuid'
 
 export default function UploadImg() {
   const supabase = createClientComponentClient()
-  const { user, role } = useUser() // 관리자 확인
   const [file, setFile] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
 
