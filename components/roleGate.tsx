@@ -2,6 +2,9 @@
 
 import { useEffect, useState } from 'react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import AdminCta from './adminCta'
+import UserCta from './userCta'
+import GuestCta from './guestCta'
 
 export default function RoleGate() {
   const supabase = createClientComponentClient()
