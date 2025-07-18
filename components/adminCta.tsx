@@ -1,12 +1,18 @@
 'use client'
 
+import Link from 'next/link'
+
 export default function AdminCta() {
   return (
-    <div className="text-center space-y-2">
-      <h2 className="text-xl font-semibold">🛠 관리자 기능 활성화됨</h2>
-      <p className="text-sm text-muted-foreground">
-        이미지를 업로드하거나 주석 작업을 관리할 수 있어요.
-      </p>
+    <div className="text-center space-y-4">
+      <h2 className="text-2xl font-bold">관리자님, 환영합니다.</h2>
+      <p className="text-gray-500">관리자 전용 기능에 접근할 수 있습니다.</p>
+      <Link
+        href="/protected/admin/image-manager"
+        className="inline-block px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+      >
+        이미지 관리
+      </Link>
     </div>
   )
 }
