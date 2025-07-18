@@ -62,7 +62,7 @@ export const AuthButton = () => {
           className="flex items-center gap-2 text-sm px-4 py-2 rounded border border-input bg-background hover:bg-accent hover:text-accent-foreground transition"
         >
           <Image
-            src="/google-logo.svg"
+            src="/Google_Favicon_2025.svg"
             alt="Google logo"
             width={18}
             height={18}
