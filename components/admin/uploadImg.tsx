@@ -10,7 +10,7 @@ export default function UploadImg() {
   const [uploading, setUploading] = useState(false)
 
   const handleUpload = async () => {
-    if (!file || !user || role !== 'admin') return
+    if (!file || role !== 'admin') return
 
     setUploading(true)
 
