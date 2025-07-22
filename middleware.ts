@@ -22,6 +22,6 @@ export const config = {
     '/adm/:path*',
     '/user/:path*',
     // 정적 리소스는 제외
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|auth|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }
