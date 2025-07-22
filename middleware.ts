@@ -20,8 +20,8 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     // 보호할 경로
-    '/app/adm/:path*',
-    '/app/user/:path*',
+    '/adm/:path*',
+    '/user/:path*',
     // 정적 리소스 제외
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
