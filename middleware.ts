@@ -9,8 +9,8 @@ export async function middleware(request: NextRequest) {
     data: { session },
   } = await supabase.auth.getSession()
 
-  // 세션 없으면 로그인으로 리다이렉트
-  if (!session && request.nextUrl.pathname.startsWith('/app')) {
+  // 세션이 없으면 로그인 페이지로 리다이렉트
+  if (!session) {
     return NextResponse.redirect(new URL('/auth/login', request.url))
   }
 
@@ -19,10 +19,9 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // 보호할 경로
     '/adm/:path*',
     '/user/:path*',
-    // 정적 리소스 제외
+    // 정적 리소스는 제외
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }
