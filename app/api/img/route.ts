@@ -34,7 +34,7 @@ export async function POST(req: Request) {
   const filePath = `images/${fileName}`
 
   const { error: uploadError } = await supabase.storage
-    .from('your_bucket_name') // ← 실제 버킷 이름으로 교체
+    .from('img')
     .upload(filePath, file)
 
   if (uploadError) {
