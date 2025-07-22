@@ -1,6 +1,6 @@
 'use client'
 
-import UploadImg from '@/components/admin/uploadImg'
+import UploadImg from '@/components/adm/uploadImg'
 
 export default function AdminImageManagerPage() {
   return (
