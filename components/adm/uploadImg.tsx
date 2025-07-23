@@ -1,54 +1,54 @@
 'use client'
 
 import { useState } from 'react'
+import { createBrowserClient } from '@supabase/ssr'
 
-export default function UploadImg() {
+const supabase = createBrowserClient()
+
+export default function UploadImage() {
   const [file, setFile] = useState<File | null>(null)
-  const [uploading, setUploading] = useState(false)
+  const [title, setTitle] = useState('')
+  const [description, setDescription] = useState('')
 
   const handleUpload = async () => {
-    if (!file) {
-      alert('파일을 선택하세요.')
-      return
-    }
+    if (!file) return alert('파일을 선택하세요.')
 
-    setUploading(true)
+    const filePath = `uploads/${Date.now()}_${file.name}`
 
-    const formData = new FormData()
-    formData.append('file', file)
+    const { data, error } = await supabase.storage
+      .from('project-images')
+      .upload(filePath, file)
 
-    const res = await fetch('/api/img', {
+    if (error) return alert('업로드 실패: ' + error.message)
+
+    const { data: userData } = await supabase.auth.getUser()
+    const user = userData?.user
+
+    // 서버에 메타데이터 저장 요청
+    await fetch('/api/image-meta', {
       method: 'POST',
-      body: formData,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        path: filePath,
+        url: supabase.storage.from('project-images').getPublicUrl(filePath).data.publicUrl,
+        title,
+        description,
+        uploader: user?.id,
+      }),
     })
 
-    if (!res.ok) {
-      const message = await res.text()
-      alert(message || '업로드 실패')
-    } else {
-      alert('업로드 성공')
-      setFile(null)
-    }
-
-    setUploading(false)
+    alert('성공적으로 업로드 완료')
+    setFile(null)
+    setTitle('')
+    setDescription('')
   }
 
   return (
-    <div className="p-4 border rounded shadow w-full max-w-md mx-auto bg-white dark:bg-zinc-900">
-      <h2 className="text-lg font-semibold mb-2 text-zinc-900 dark:text-zinc-100">이미지 업로드</h2>
-      <input
-        type="file"
-        accept="image/*"
-        onChange={(e) => setFile(e.target.files?.[0] || null)}
-        className="mb-2"
-      />
-      <button
-        onClick={handleUpload}
-        disabled={!file || uploading}
-        className="bg-blue-500 text-white px-4 py-2 rounded disabled:opacity-50"
-      >
-        {uploading ? '업로드 중...' : '업로드'}
-      </button>
+    <div className="space-y-2">
+      <input type="file" onChange={(e) => setFile(e.target.files?.[0] || null)} />
+      <input type="text" placeholder="제목" value={title} onChange={(e) => setTitle(e.target.value)} />
+      <textarea placeholder="설명" value={description} onChange={(e) => setDescription(e.target.value)} />
+      <button onClick={handleUpload}>업로드</button>
     </div>
   )
 }
