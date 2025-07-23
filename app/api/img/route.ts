@@ -5,12 +5,17 @@ import { cookies as nextCookies } from 'next/headers'
 export const runtime = 'nodejs'
 
 export async function POST(req: Request) {
+  const cookieStore = await nextCookies() // ✅ await 추가 (핵심 고침!)
+
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        get: (name: string) => nextCookies().get(name)?.value,
+        get: (name: string) => {
+          const cookie = cookieStore.get(name) // ✅ 에러 안 남
+          return cookie?.value
+        },
         set: () => {},
         remove: () => {},
       },
