@@ -5,7 +5,7 @@ import { cookies as nextCookies } from 'next/headers'
 export const runtime = 'nodejs'
 
 export async function POST(req: Request) {
-  const cookieStore = nextCookies()
+  const cookieStore = await nextCookies()
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
