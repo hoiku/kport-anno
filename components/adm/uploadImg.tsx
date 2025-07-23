@@ -15,7 +15,7 @@ export default function UploadImage() {
 
     const filePath = `uploads/${Date.now()}_${file.name}`
 
-    const { data, error } = await supabase.storage
+    const { error } = await supabase.storage
       .from('project-images')
       .upload(filePath, file)
 
