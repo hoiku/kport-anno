@@ -5,18 +5,19 @@ import { cookies as nextCookies } from 'next/headers'
 export const runtime = 'nodejs'
 
 export async function POST(req: Request) {
-  const cookieStore = nextCookies()
+  const cookieStore = nextCookies()  // 이건 비동기 아님
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value
+        get: (name: string) => {
+          const cookie = cookieStore.get(name)
+          return cookie?.value
         },
-        set() {}, // 서버 환경에선 생략
-        remove() {}, // 서버 환경에선 생략
+        set: () => {},  // SSR 환경에서는 사용 안 함
+        remove: () => {}, // SSR 환경에서는 사용 안 함
       },
     }
   )
