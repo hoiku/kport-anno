@@ -17,7 +17,7 @@ export default function UploadImg() {
     const formData = new FormData()
     formData.append('file', file)
 
-    const res = await fetch('/upload-handler', {
+    const res = await fetch('/api/img', {
       method: 'POST',
       body: formData,
     })
