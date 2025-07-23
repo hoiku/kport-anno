@@ -25,7 +25,7 @@ export default function UploadImage() {
     const user = userData?.user
 
     // 서버에 메타데이터 저장 요청
-    await fetch('/api/image-meta', {
+    await fetch('/api/img', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
