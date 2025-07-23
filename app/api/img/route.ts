@@ -15,8 +15,14 @@ export async function POST(req: Request) {
   const { path, url, title, description, uploader } = body
 
   const { error } = await supabase
-    .from('images')
-    .insert([{ path, url, title, description, uploader }])
+  .from('images')
+  .insert([{
+    image_url: url,        // 매핑 변경
+    user_id: uploader,     // 매핑 변경
+    title,
+    description,
+    // path도 별도 필드 만들거나 metadata에 넣을 수 있음
+  }])
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
