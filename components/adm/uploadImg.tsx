@@ -1,12 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { createBrowserClient } from '@supabase/ssr'
-
-const supabase = createBrowserClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+import { supabase } from '@/lib/supabase/client' // ✅ 여기서 불러오기
 
 export default function UploadImage() {
   const [file, setFile] = useState<File | null>(null)
@@ -24,10 +19,11 @@ export default function UploadImage() {
 
     if (error) return alert('업로드 실패: ' + error.message)
 
-    const { data: userData } = await supabase.auth.getUser()
+    const { data: userData, error: userErr } = await supabase.auth.getUser()
+    if (userErr) return alert('인증 오류: ' + userErr.message)
+
     const user = userData?.user
 
-    // 서버에 메타데이터 저장 요청
     await fetch('/api/img', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
