@@ -16,7 +16,7 @@ export default function UploadImage() {
     const filePath = `uploads/${Date.now()}_${file.name}`
 
     const { error } = await supabase.storage
-      .from('project-images')
+      .from('img')
       .upload(filePath, file)
 
     if (error) return alert('업로드 실패: ' + error.message)
@@ -30,7 +30,7 @@ export default function UploadImage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         path: filePath,
-        url: supabase.storage.from('project-images').getPublicUrl(filePath).data.publicUrl,
+        url: supabase.storage.from('img').getPublicUrl(filePath).data.publicUrl,
         title,
         description,
         uploader: user?.id,
