@@ -2,12 +2,14 @@
 
 import { useState } from 'react'
 import { v4 as uuidv4 } from 'uuid'
-import { supabase } from '@/lib/supabase/client'
+import { createClient  } from '@/lib/supabase/client'
 
 export default function UploadImg() {
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [imageUrl, setImageUrl] = useState<string | null>(null)
+
+  const supabase = createClient()
 
   const handleUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
