@@ -12,7 +12,7 @@ export async function POST(req: Request) {
   )
 
   const body = await req.json()
-  const { path, url, title, description, uploader } = body
+  const { url, title, description, uploader } = body
 
   const { error } = await supabase
   .from('images')
