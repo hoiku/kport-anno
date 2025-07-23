@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server"; // ✅ 서버 클라이언트 import
 
 export async function POST(req: Request) {
-  const supabase = createClient(); // ✅ 쿠키 기반 인증 포함됨
+  const supabase = await createClient(); // ✅ 쿠키 기반 인증 포함됨
 
   const { url, title, description } = await req.json();
 
