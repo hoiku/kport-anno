@@ -5,17 +5,16 @@ import { cookies as nextCookies } from 'next/headers'
 export const runtime = 'nodejs'
 
 export async function POST(req: Request) {
-  // ✅ cookies 가져오기
+  // ✅ cookieStore를 명시적으로 타입 지정
   const cookieStore = nextCookies()
 
-  // ✅ Supabase 클라이언트 생성
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
         get: (name: string) => {
-          const cookie = cookieStore.get(name)
+          const cookie = cookieStore.get(name) // ✅ 타입 OK
           return cookie?.value
         },
         set: () => {},
@@ -24,11 +23,9 @@ export async function POST(req: Request) {
     }
   )
 
-  // ✅ 요청 본문 파싱
   const body = await req.json()
   const { url, title, description, uploader } = body
 
-  // ✅ Supabase에 삽입
   const { error } = await supabase
     .from('images')
     .insert([
