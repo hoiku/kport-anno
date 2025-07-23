@@ -1,55 +1,91 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { createClient } from '@/lib/supabase/client' // ✅ 여기서 불러오기
+import { useState } from "react";
 
-export default function UploadImage() {
-  const [file, setFile] = useState<File | null>(null)
-  const [title, setTitle] = useState('')
-  const [description, setDescription] = useState('')
+export default function UploadImg() {
+  const [file, setFile] = useState<File | null>(null);
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [message, setMessage] = useState("");
 
-  const supabase = createClient()
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
 
-  const handleUpload = async () => {
-    if (!file) return alert('파일을 선택하세요.')
+    if (!file) {
+      setMessage("파일을 선택하세요.");
+      return;
+    }
 
-    const filePath = `uploads/${Date.now()}_${file.name}`
+    setUploading(true);
+    setMessage("");
 
-    const { error } = await supabase.storage
-      .from('img')
-      .upload(filePath, file)
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("title", title);
+    formData.append("description", description);
 
-    if (error) return alert('업로드 실패: ' + error.message)
+    const res = await fetch("/api/img", {
+      method: "POST",
+      body: formData,
+    });
 
-    const { data: userData, error: userErr } = await supabase.auth.getUser()
-    if (userErr) return alert('인증 오류: ' + userErr.message)
+    const result = await res.json();
+    setUploading(false);
 
-    const user = userData?.user
-
-    await fetch('/api/img', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        path: filePath,
-        url: supabase.storage.from('img').getPublicUrl(filePath).data.publicUrl,
-        title,
-        description,
-        uploader: user?.id,
-      }),
-    })
-
-    alert('성공적으로 업로드 완료')
-    setFile(null)
-    setTitle('')
-    setDescription('')
-  }
+    if (res.ok) {
+      setMessage("✅ 업로드 성공!");
+    } else {
+      setMessage(`❌ 실패: ${result.error}`);
+    }
+  };
 
   return (
-    <div className="space-y-2">
-      <input type="file" onChange={(e) => setFile(e.target.files?.[0] || null)} />
-      <input type="text" placeholder="제목" value={title} onChange={(e) => setTitle(e.target.value)} />
-      <textarea placeholder="설명" value={description} onChange={(e) => setDescription(e.target.value)} />
-      <button onClick={handleUpload}>업로드</button>
-    </div>
-  )
+    <form
+      onSubmit={handleSubmit}
+      className="max-w-md mx-auto mt-10 bg-zinc-900 p-6 rounded-2xl shadow-xl space-y-4 text-white"
+    >
+      <h2 className="text-xl font-bold mb-4">🖼️ 이미지 업로드</h2>
+
+      <input
+        type="file"
+        accept="image/*"
+        onChange={(e) => setFile(e.target.files?.[0] || null)}
+        className="block w-full text-sm text-gray-300 file:mr-4 file:py-2 file:px-4
+                   file:rounded-full file:border-0 file:text-sm file:font-semibold
+                   file:bg-blue-600 file:text-white hover:file:bg-blue-700"
+      />
+
+      <input
+        type="text"
+        placeholder="제목"
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        className="w-full px-4 py-2 bg-zinc-800 rounded-md text-white focus:outline-none"
+      />
+
+      <textarea
+        placeholder="설명"
+        value={description}
+        onChange={(e) => setDescription(e.target.value)}
+        className="w-full px-4 py-2 bg-zinc-800 rounded-md text-white focus:outline-none resize-none h-24"
+      />
+
+      <button
+        type="submit"
+        disabled={uploading}
+        className={`w-full py-2 px-4 rounded-md text-white font-semibold ${
+          uploading ? "bg-gray-500" : "bg-green-600 hover:bg-green-700"
+        }`}
+      >
+        {uploading ? "업로드 중..." : "업로드하기"}
+      </button>
+
+      {message && (
+        <p className="text-sm text-center mt-2">
+          {message}
+        </p>
+      )}
+    </form>
+  );
 }
