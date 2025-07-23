@@ -1,12 +1,14 @@
 'use client'
 
 import { useState } from 'react'
-import { supabase } from '@/lib/supabase/client' // ✅ 여기서 불러오기
+import { createClient } from '@/lib/supabase/client' // ✅ 여기서 불러오기
 
 export default function UploadImage() {
   const [file, setFile] = useState<File | null>(null)
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
+
+  const supabase = createClient()
 
   const handleUpload = async () => {
     if (!file) return alert('파일을 선택하세요.')
