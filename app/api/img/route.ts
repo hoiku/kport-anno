@@ -5,18 +5,12 @@ import { cookies as nextCookies } from 'next/headers'
 export const runtime = 'nodejs'
 
 export async function POST(req: Request) {
-  // ✅ cookieStore를 명시적으로 타입 지정
-  const cookieStore = nextCookies()
-
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        get: (name: string) => {
-          const cookie = cookieStore.get(name) // ✅ 타입 OK
-          return cookie?.value
-        },
+        get: (name: string) => nextCookies().get(name)?.value,
         set: () => {},
         remove: () => {},
       },
