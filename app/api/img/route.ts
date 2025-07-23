@@ -1,4 +1,3 @@
-// app/api/image-meta/route.ts
 import { NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
@@ -6,7 +5,12 @@ import { cookies } from 'next/headers'
 export const runtime = 'nodejs'
 
 export async function POST(req: Request) {
-  const supabase = createServerClient({ cookies })
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { cookies }
+  )
+
   const body = await req.json()
   const { path, url, title, description, uploader } = body
 
