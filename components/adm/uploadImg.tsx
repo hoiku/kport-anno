@@ -20,7 +20,7 @@ export default function UploadImg() {
 
     const fileExt = file.name.split('.').pop()
     const fileName = `${uuidv4()}.${fileExt}`
-    const filePath = `public/${fileName}`
+    const filePath = `${fileName}`
 
     const { error: uploadError } = await supabase.storage
       .from('img')
