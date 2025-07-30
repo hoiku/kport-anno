@@ -11,58 +11,81 @@ export default function UploadImg() {
 
   const handleUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
-    if (!file) return
+    if (!file) {
+      console.log('⛔ No file selected')
+      return
+    }
 
     setUploading(true)
     setError(null)
 
-    const fileExt = file.name.includes('.') ? file.name.split('.').pop() : 'jpg'
+    const fileExt = file.name.split('.').pop()
     const fileName = `${uuidv4()}.${fileExt}`
-    const filePath = fileName
+    const filePath = `${fileName}`
 
+    console.log('📤 Starting upload to Supabase Storage')
+    console.log('📝 File path:', filePath)
+
+    // 🔁 1. Upload to Storage
     const { error: uploadError } = await supabase.storage
       .from('img')
       .upload(filePath, file)
 
     if (uploadError) {
-      setError(uploadError.message)
+      console.error('❌ Upload Error:', uploadError)
+      setError(`업로드 실패: ${uploadError.message}`)
       setUploading(false)
       return
     }
 
-    const { data: publicData } = supabase.storage.from('img').getPublicUrl(filePath)
+    console.log('✅ Upload to storage successful')
+
+    // 🧾 2. Get public URL
+    const { data: publicData } = supabase.storage
+      .from('img')
+      .getPublicUrl(filePath)
 
     if (!publicData?.publicUrl) {
+      console.error('❌ Public URL generation failed')
       setError('공개 URL 생성 실패')
       setUploading(false)
       return
     }
 
+    console.log('🌐 Public URL:', publicData.publicUrl)
     setImageUrl(publicData.publicUrl)
-    console.log('✅ Uploaded URL:', publicData.publicUrl)
 
-    // 🔐 사용자 인증 정보 가져오기
+    // 👤 3. Get current user
     const { data: userData, error: userError } = await supabase.auth.getUser()
+    console.log('🔐 Auth result:', { userData, userError })
+
     if (userError || !userData?.user) {
+      console.error('❌ User not authenticated')
       setError('로그인이 필요합니다')
       setUploading(false)
       return
     }
 
-    // 📝 Supabase DB에 이미지 메타데이터 삽입
-    const { error: insertError } = await supabase.from('images').insert({
-      user_id: userData.user.id,
-      path: filePath,
-      url: publicData.publicUrl,
-      created_at: new Date().toISOString(),
-    })
+    // 🧩 4. Insert metadata to DB
+    console.log('📥 Inserting metadata to DB...')
+
+    const { error: insertError } = await supabase
+      .from('images')
+      .insert({
+        user_id: userData.user.id,
+        path: filePath,
+        url: publicData.publicUrl,
+        created_at: new Date().toISOString()
+      })
 
     if (insertError) {
+      console.error('❌ DB Insert Error:', insertError)
       setError(`DB 저장 실패: ${insertError.message}`)
-    } else {
-      console.log('✅ DB에 메타데이터 저장 완료')
+      setUploading(false)
+      return
     }
 
+    console.log('✅ Metadata insert successful')
     setUploading(false)
   }
 
