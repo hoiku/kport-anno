@@ -26,15 +26,41 @@ export default function UploadImg() {
 
     if (uploadError) {
       setError(uploadError.message)
-    } else {
-      const { data: publicData } = supabase.storage.from('img').getPublicUrl(filePath)
+      setUploading(false)
+      return
+    }
 
-      if (!publicData?.publicUrl) {
-        setError('공개 URL 생성 실패')
-      } else {
-        setImageUrl(publicData.publicUrl)
-        console.log('✅ Uploaded URL:', publicData.publicUrl)
-      }
+    const { data: publicData } = supabase.storage.from('img').getPublicUrl(filePath)
+
+    if (!publicData?.publicUrl) {
+      setError('공개 URL 생성 실패')
+      setUploading(false)
+      return
+    }
+
+    setImageUrl(publicData.publicUrl)
+    console.log('✅ Uploaded URL:', publicData.publicUrl)
+
+    // 🔐 사용자 인증 정보 가져오기
+    const { data: userData, error: userError } = await supabase.auth.getUser()
+    if (userError || !userData?.user) {
+      setError('로그인이 필요합니다')
+      setUploading(false)
+      return
+    }
+
+    // 📝 Supabase DB에 이미지 메타데이터 삽입
+    const { error: insertError } = await supabase.from('images').insert({
+      user_id: userData.user.id,
+      path: filePath,
+      url: publicData.publicUrl,
+      created_at: new Date().toISOString(),
+    })
+
+    if (insertError) {
+      setError(`DB 저장 실패: ${insertError.message}`)
+    } else {
+      console.log('✅ DB에 메타데이터 저장 완료')
     }
 
     setUploading(false)
