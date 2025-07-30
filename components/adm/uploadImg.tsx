@@ -2,14 +2,12 @@
 
 import { useState } from 'react'
 import { v4 as uuidv4 } from 'uuid'
-import { createClient  } from '@/lib/supabase/client'
+import { supabase } from '@/lib/supabase/supabase'
 
 export default function UploadImg() {
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [imageUrl, setImageUrl] = useState<string | null>(null)
-
-  const supabase = createClient()
 
   const handleUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -18,20 +16,28 @@ export default function UploadImg() {
     setUploading(true)
     setError(null)
 
-    const fileExt = file.name.split('.').pop()
+    const fileExt = file.name.includes('.') ? file.name.split('.').pop() : 'jpg'
     const fileName = `${uuidv4()}.${fileExt}`
-    const filePath = `${fileName}`
+    const filePath = fileName
 
     const { error: uploadError } = await supabase.storage
-      .from('img')
+      .from('img') // ← 버킷 이름 반드시 일치해야 함
       .upload(filePath, file)
 
     if (uploadError) {
       setError(uploadError.message)
     } else {
-      const { data } = supabase.storage.from('img').getPublicUrl(filePath)
-      setImageUrl(data.publicUrl)
-      console.log('✅ Uploaded URL:', data.publicUrl)
+      const {
+        data: publicData,
+        error: urlError
+      } = supabase.storage.from('img').getPublicUrl(filePath)
+
+      if (urlError || !publicData?.publicUrl) {
+        setError(urlError?.message || '이미지 URL 불러오기 실패')
+      } else {
+        setImageUrl(publicData.publicUrl)
+        console.log('✅ Uploaded URL:', publicData.publicUrl)
+      }
     }
 
     setUploading(false)
@@ -39,7 +45,7 @@ export default function UploadImg() {
 
   return (
     <div className="flex flex-col gap-4 p-4 bg-zinc-900 rounded-xl w-full max-w-md border border-zinc-700">
-      <label className="text-white font-semibold">Upload an Image</label>
+      <label className="text-white font-semibold">📤 Upload an Image</label>
 
       <input
         type="file"
