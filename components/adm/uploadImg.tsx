@@ -19,6 +19,18 @@ export default function UploadImg() {
     setUploading(true)
     setError(null)
 
+    // 👤 1. 인증된 사용자 확인
+    const { data: userData, error: userError } = await supabase.auth.getUser()
+    console.log('🔐 Auth result:', { userData, userError })
+
+    if (userError || !userData?.user) {
+      console.error('❌ User not authenticated')
+      setError('로그인이 필요합니다')
+      setUploading(false)
+      return
+    }
+
+    // 🧾 2. 파일 정보 생성
     const fileExt = file.name.split('.').pop()
     const fileName = `${uuidv4()}.${fileExt}`
     const filePath = `${fileName}`
@@ -26,7 +38,7 @@ export default function UploadImg() {
     console.log('📤 Starting upload to Supabase Storage')
     console.log('📝 File path:', filePath)
 
-    // 🔁 1. Upload to Storage
+    // 🔁 3. Storage 업로드
     const { error: uploadError } = await supabase.storage
       .from('img')
       .upload(filePath, file)
@@ -40,7 +52,7 @@ export default function UploadImg() {
 
     console.log('✅ Upload to storage successful')
 
-    // 🧾 2. Get public URL
+    // 🌐 4. 공개 URL 생성
     const { data: publicData } = supabase.storage
       .from('img')
       .getPublicUrl(filePath)
@@ -55,18 +67,7 @@ export default function UploadImg() {
     console.log('🌐 Public URL:', publicData.publicUrl)
     setImageUrl(publicData.publicUrl)
 
-    // 👤 3. Get current user
-    const { data: userData, error: userError } = await supabase.auth.getUser()
-    console.log('🔐 Auth result:', { userData, userError })
-
-    if (userError || !userData?.user) {
-      console.error('❌ User not authenticated')
-      setError('로그인이 필요합니다')
-      setUploading(false)
-      return
-    }
-
-    // 🧩 4. Insert metadata to DB
+    // 🧩 5. 메타데이터 DB 삽입
     console.log('📥 Inserting metadata to DB...')
 
     const { error: insertError } = await supabase
