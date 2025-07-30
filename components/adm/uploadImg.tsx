@@ -21,19 +21,16 @@ export default function UploadImg() {
     const filePath = fileName
 
     const { error: uploadError } = await supabase.storage
-      .from('img') // ← 버킷 이름 반드시 일치해야 함
+      .from('img')
       .upload(filePath, file)
 
     if (uploadError) {
       setError(uploadError.message)
     } else {
-      const {
-        data: publicData,
-        error: urlError
-      } = supabase.storage.from('img').getPublicUrl(filePath)
+      const { data: publicData } = supabase.storage.from('img').getPublicUrl(filePath)
 
-      if (urlError || !publicData?.publicUrl) {
-        setError(urlError?.message || '이미지 URL 불러오기 실패')
+      if (!publicData?.publicUrl) {
+        setError('공개 URL 생성 실패')
       } else {
         setImageUrl(publicData.publicUrl)
         console.log('✅ Uploaded URL:', publicData.publicUrl)
