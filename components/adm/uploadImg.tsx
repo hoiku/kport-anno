@@ -19,6 +19,21 @@ export default function UploadImg() {
     setUploading(true)
     setError(null)
 
+    // ✅ 1. 사용자 인증 먼저 확인
+    console.log('🔐 Checking user session and authentication...')
+    const { data: userData, error: userError } = await supabase.auth.getUser()
+    console.log('🧪 Auth result:', { userData, userError })
+
+    if (userError || !userData?.user) {
+      console.error('❌ User not authenticated')
+      setError('로그인이 필요합니다')
+      setUploading(false)
+      return
+    }
+
+    console.log('✅ User is authenticated:', userData.user.id)
+    
+    // 2. 인증된 사용자만 파일 업로드 진행
     const fileExt = file.name.split('.').pop()
     const fileName = `${uuidv4()}.${fileExt}`
     const filePath = `${fileName}`
@@ -26,11 +41,7 @@ export default function UploadImg() {
     console.log('📤 Starting upload to Supabase Storage')
     console.log('📝 File path:', filePath)
 
-    // ✅ 세션 먼저 확인
-    const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
-    console.log('🧪 Session Check:', { sessionData, sessionError })
-
-    // 🔁 1. Upload to Storage
+    // 🔁 3. Upload to Storage
     const { error: uploadError } = await supabase.storage
       .from('img')
       .upload(filePath, file)
@@ -44,7 +55,7 @@ export default function UploadImg() {
 
     console.log('✅ Upload to storage successful')
 
-    // 🧾 2. Get public URL
+    // 🧾 4. Get public URL
     const { data: publicData } = supabase.storage
       .from('img')
       .getPublicUrl(filePath)
@@ -59,18 +70,7 @@ export default function UploadImg() {
     console.log('🌐 Public URL:', publicData.publicUrl)
     setImageUrl(publicData.publicUrl)
 
-    // 👤 3. Get current user
-    const { data: userData, error: userError } = await supabase.auth.getUser()
-    console.log('🔐 Auth result:', { userData, userError })
-
-    if (userError || !userData?.user) {
-      console.error('❌ User not authenticated')
-      setError('로그인이 필요합니다')
-      setUploading(false)
-      return
-    }
-
-    // 🧩 4. Insert metadata to DB
+    // 🧩 5. Insert metadata to DB
     console.log('📥 Inserting metadata to DB...')
 
     const { error: insertError } = await supabase
