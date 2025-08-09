@@ -1,13 +1,13 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import type { User } from '@supabase/supabase-js'
 import Image from 'next/image'
 
 export const AuthButton = () => {
-  const supabase = createClientComponentClient()
+  const supabase = createClient()
   const router = useRouter()
   const [user, setUser] = useState<User | null>(null)
   const [role, setRole] = useState<string | null>(null)
@@ -31,7 +31,21 @@ export const AuthButton = () => {
     }
 
     fetchUser()
-  }, [])
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        if (event === 'SIGNED_IN') {
+          setUser(session?.user || null)
+        } else if (event === 'SIGNED_OUT') {
+          setUser(null)
+          setRole(null)
+        }
+      }
+    )
+
+    return () => subscription.unsubscribe()
+  }, [supabase])
 
   const handleLogin = async () => {
     await supabase.auth.signInWithOAuth({

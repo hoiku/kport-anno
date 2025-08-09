@@ -1,18 +1,18 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { createClient } from '@/lib/supabase/client'
 import AdminCta from './adminCta'
 import UserCta from './userCta'
 import GuestCta from './guestCta'
 
 export default function RoleGate() {
-  const supabase = createClientComponentClient()
+  const supabase = createClient()
   const [role, setRole] = useState<string | null>(null)
 
   useEffect(() => {
-    supabase.auth.getUser().then(async ({ data }) => {
-      const user = data.user
+    const fetchUserRole = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
       if (!user) return setRole('guest')
 
       const { data: profile } = await supabase
@@ -22,8 +22,23 @@ export default function RoleGate() {
         .single()
 
       setRole(profile?.role ?? 'user')
-    })
-  }, [])
+    }
+
+    fetchUserRole()
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event) => {
+        if (event === 'SIGNED_OUT') {
+          setRole('guest')
+        } else if (event === 'SIGNED_IN') {
+          fetchUserRole()
+        }
+      }
+    )
+
+    return () => subscription.unsubscribe()
+  }, [supabase])
 
   if (!role) return <p>로딩 중...</p>
   if (role === 'admin') return <AdminCta />
