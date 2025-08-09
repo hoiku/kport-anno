@@ -2,18 +2,30 @@
 
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { createClient } from '@/lib/supabase/client'
 import type { User } from '@supabase/supabase-js'
 
 export function Hero() {
-  const supabase = createClientComponentClient()
+  const supabase = createClient()
   const [user, setUser] = useState<User | null>(null)
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
+    const fetchUser = async () => {
+      const { data } = await supabase.auth.getUser()
       setUser(data.user)
-    })
-  }, [])
+    }
+
+    fetchUser()
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setUser(session?.user || null)
+      }
+    )
+
+    return () => subscription.unsubscribe()
+  }, [supabase])
 
   return (
     <section className="flex-1 flex flex-col items-center justify-center text-center px-4">
