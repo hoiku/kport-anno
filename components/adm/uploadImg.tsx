@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { v4 as uuidv4 } from 'uuid'
-import { supabase } from '@/lib/supabase/supabase'
+import { createClient } from '@/lib/supabase/client'
 
 export default function UploadImg() {
   const [uploading, setUploading] = useState(false)
@@ -18,6 +18,9 @@ export default function UploadImg() {
 
     setUploading(true)
     setError(null)
+
+    // Create supabase client
+    const supabase = createClient()
 
     // ✅ 1. 사용자 인증 먼저 확인
     console.log('🔐 Checking user session and authentication...')
